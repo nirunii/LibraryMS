@@ -15,7 +15,7 @@ class MemberController extends Controller
     public function create()
     {
         $this->requireRole(['admin', 'librarian']);
-        $this->view('members/form', ['u' => ['name' => '', 'email' => '', 'role' => 'member'], 'errors' => [], 'action' => 'members/store', 'title' => 'Add member', 'isNew' => true, 'canAssignRole' => $this->canAssignRole()]);
+        $this->view('members/form', ['u' => ['name' => '', 'email' => '', 'phone' => '', 'role' => 'member'], 'errors' => [], 'action' => 'members/store', 'title' => 'Add member', 'isNew' => true, 'canAssignRole' => $this->canAssignRole()]);
     }
 
     public function store()
@@ -32,6 +32,7 @@ class MemberController extends Controller
             return;
         }
         $model->create($data);
+        Audit::log('member.add', trim($data['name']) . ' (' . $data['email'] . ')');
         $this->flash('success', 'Member added.');
         $this->redirect('members');
     }
@@ -60,6 +61,7 @@ class MemberController extends Controller
             return;
         }
         $model->update((int)$id, $data);
+        Audit::log('member.edit', trim($data['name']) . ' (#' . (int)$id . ')');
         $this->flash('success', 'Member updated.');
         $this->redirect('members');
     }
@@ -78,11 +80,46 @@ class MemberController extends Controller
         }
         try {
             $model->delete((int)$id);
+            Audit::log('member.delete', $u['name'] . ' (#' . (int)$id . ')');
             $this->flash('success', 'Member deleted.');
         } catch (PDOException $ex) {
             $this->flash('error', 'This user has loan history and cannot be deleted.');
         }
         $this->redirect('members');
+    }
+
+    // A member's profile page for staff: details, loans history, reservations and fines.
+    public function show($id = 0)
+    {
+        $this->requireRole(['admin', 'librarian']);
+        $u = (new User())->find((int)$id);
+        if (!$u || !$this->canManage($u)) { $this->notFound(); return; }
+        $pay = new Payment();
+        $this->view('members/show', [
+            'u' => $u, 'loans' => (new Loan())->byUser((int)$id), 'reservations' => (new Reservation())->byUser((int)$id),
+            'payments' => $pay->byUser((int)$id), 'outstanding' => $pay->outstandingForUser((int)$id),
+            'isSelf' => (int)$id === (int)user()['id'],
+        ]);
+    }
+
+    // Suspend or reactivate a membership (a suspended member can log in but cannot borrow).
+    public function setStatus($id = 0)
+    {
+        $this->requireRole(['admin', 'librarian']);
+        if (!$this->isPost()) { $this->redirect('members'); }
+        $this->checkCsrf();
+        $model = new User();
+        $u = $model->find((int)$id);
+        if (!$u || !$this->canManage($u)) { $this->notFound(); return; }
+        if ((int)$id === (int)user()['id']) {
+            $this->flash('error', 'You cannot suspend your own account.');
+            $this->redirect('members/show/' . (int)$id);
+        }
+        $status = ($_POST['status'] ?? '') === 'suspended' ? 'suspended' : 'active';
+        $model->setStatus((int)$id, $status);
+        Audit::log($status === 'suspended' ? 'member.suspend' : 'member.activate', $u['name'] . ' (#' . (int)$id . ')');
+        $this->flash('success', $status === 'suspended' ? 'Membership suspended.' : 'Membership reactivated.');
+        $this->redirect('members/show/' . (int)$id);
     }
 
     // Only admins may choose a role for an account.

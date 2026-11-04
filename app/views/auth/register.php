@@ -15,4 +15,5 @@
     <button class="btn block">Create account</button>
   </form>
   <p class="muted center">Already registered? <a href="<?= url('auth/login') ?>">Log in</a></p>
+  <p class="muted center"><a href="<?= url('books') ?>">Browse the catalogue without logging in</a></p>
 </div>

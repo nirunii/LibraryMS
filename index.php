@@ -20,10 +20,14 @@ $routes = [
     'members'   => 'MemberController',
     'loans'     => 'LoanController',
     'reports'   => 'ReportController',
+    'fines'     => 'FineController',
+    'profile'   => 'ProfileController',
+    'settings'  => 'SettingController',
+    'audit'     => 'AuditController',
 ];
 
 $parts  = explode('/', trim($_GET['url'] ?? '', '/'));
-$key    = $parts[0] !== '' ? $parts[0] : (isset($_SESSION['user']) ? 'dashboard' : 'auth');
+$key    = $parts[0] !== '' ? $parts[0] : (isset($_SESSION['user']) ? 'dashboard' : 'books');
 $action = $parts[1] ?? ($key === 'auth' ? 'login' : 'index');
 $params = array_slice($parts, 2);
 

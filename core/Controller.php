@@ -39,7 +39,14 @@ class Controller
 
     protected function requireLogin()
     {
-        if (!user()) { $this->redirect('auth/login'); }
+        if (!user()) {
+            if ($_SERVER['REQUEST_METHOD'] === 'GET') {
+                $next = trim($_GET['url'] ?? '', '/');
+                if (preg_match('~^[a-z]+(/[A-Za-z0-9]+)*$~', $next)) { $_SESSION['return_to'] = $next; }
+            }
+            $this->flash('info', 'Please log in to continue.');
+            $this->redirect('auth/login');
+        }
     }
 
     protected function requireRole($roles)

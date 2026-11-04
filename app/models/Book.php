@@ -9,18 +9,33 @@ class Book extends Model
 
     public function all($q = '', $category = '')
     {
-        $sql = 'SELECT * FROM books WHERE 1 = 1';
+        $sql = "SELECT b.*,
+                       (SELECT COUNT(*) FROM reservations r WHERE r.book_id = b.id AND r.status = 'ready') AS held,
+                       (SELECT COUNT(*) FROM reservations r WHERE r.book_id = b.id AND r.status = 'active') AS waiting
+                FROM books b WHERE 1 = 1";
         $p = [];
         if ($q !== '') {
-            $sql .= ' AND (title LIKE ? OR author LIKE ? OR isbn LIKE ?)';
+            $sql .= ' AND (b.title LIKE ? OR b.author LIKE ? OR b.isbn LIKE ?)';
             $like = '%' . $q . '%';
             array_push($p, $like, $like, $like);
         }
         if ($category !== '') {
-            $sql .= ' AND category = ?';
+            $sql .= ' AND b.category = ?';
             $p[] = $category;
         }
-        return $this->many($sql . ' ORDER BY title', $p);
+        return $this->many($sql . ' ORDER BY b.title', $p);
+    }
+
+    // One book with its holds-queue counts (used by the public book page).
+    public function detail($id)
+    {
+        return $this->one(
+            "SELECT b.*,
+                    (SELECT COUNT(*) FROM reservations r WHERE r.book_id = b.id AND r.status = 'ready') AS held,
+                    (SELECT COUNT(*) FROM reservations r WHERE r.book_id = b.id AND r.status = 'active') AS waiting
+             FROM books b WHERE b.id = ?",
+            [$id]
+        );
     }
 
     public function categories()

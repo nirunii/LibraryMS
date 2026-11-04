@@ -5,6 +5,10 @@ class AuthController extends Controller
     public function login()
     {
         if (user()) { $this->redirect('dashboard'); }
+        // a link such as login&next=books/show/3 sends the member back there after logging in
+        if (!$this->isPost() && isset($_GET['next']) && preg_match('~^[a-z]+(/[A-Za-z0-9]+)*$~', $_GET['next'])) {
+            $_SESSION['return_to'] = $_GET['next'];
+        }
         $errors = [];
         $old = [];
         if ($this->isPost()) {
@@ -14,8 +18,12 @@ class AuthController extends Controller
             if ($u) {
                 session_regenerate_id(true);
                 $_SESSION['user'] = ['id' => $u['id'], 'name' => $u['name'], 'email' => $u['email'], 'role' => $u['role']];
-                $this->redirect('dashboard');
+                Audit::log('login', 'Logged in');
+                $to = $_SESSION['return_to'] ?? '';
+                unset($_SESSION['return_to']);
+                $this->redirect($to !== '' ? $to : 'dashboard');
             }
+            Audit::log('login.failed', trim($_POST['email'] ?? ''));
             $errors[] = 'Incorrect email or password.';
         }
         $this->view('auth/login', ['errors' => $errors, 'old' => $old]);
@@ -35,6 +43,7 @@ class AuthController extends Controller
             if (($_POST['password'] ?? '') !== ($_POST['confirm'] ?? '')) { $errors[] = 'Passwords do not match.'; }
             if (!$errors) {
                 $model->create($data);
+                Audit::log('member.register', $data['email']);
                 $this->flash('success', 'Account created. Please log in.');
                 $this->redirect('auth/login');
             }
@@ -44,9 +53,10 @@ class AuthController extends Controller
 
     public function logout()
     {
+        Audit::log('logout', '');
         $_SESSION = [];
         session_destroy();
-        header('Location: ' . url('auth/login'));
+        header('Location: ' . url('books'));
         exit;
     }
 }

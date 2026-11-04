@@ -11,15 +11,17 @@
 </form>
 <div class="card wrap">
   <table>
-    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Books on loan</th><th></th></tr></thead>
+    <thead><tr><th>Name</th><th>Email</th><th>Role</th><th>Status</th><th>Books on loan</th><th></th></tr></thead>
     <tbody>
     <?php foreach ($users as $u): ?>
       <tr>
         <td><?= e($u['name']) ?></td><td><?= e($u['email']) ?></td>
         <td><span class="pill <?= $u['role'] === 'member' ? 'pr' : 'ok' ?>"><?= e(ucfirst($u['role'])) ?></span></td>
+        <td><?= $u['status'] === 'suspended' ? '<span class="pill dg">Suspended</span>' : '<span class="pill ok">Active</span>' ?></td>
         <td><?= (int)$u['active_loans'] ?></td>
         <td class="actions">
           <?php if ($u['can_manage']): ?>
+            <a class="btn sm" href="<?= url('members/show/' . $u['id']) ?>">View</a>
             <a class="btn light sm" href="<?= url('members/edit/' . $u['id']) ?>">Edit</a>
             <form method="post" action="<?= url('members/delete/' . $u['id']) ?>" onsubmit="return confirm('Delete this user?')">
               <?= csrf_field() ?><button class="btn danger sm">Delete</button>

@@ -3,6 +3,8 @@
  * @var array $myActive
  * @var array $monthly
  * @var array $top
+ * @var float $myFines
+ * @var int $myReady
  */ ?>
 <?php
 $hour  = (int)date('G');
@@ -27,8 +29,13 @@ $first = explode(' ', trim(user()['name']))[0];
   </div>
 </section>
 
+<?php if (!is_staff()): ?>
+  <?php if ($myReady > 0): ?><div class="alert success">A book you reserved is ready for you to borrow. <a href="<?= url('books') ?>">Go to Books</a></div><?php endif; ?>
+  <?php if ($myFines > 0): ?><div class="alert error">You owe <?= money($myFines) ?> in unpaid fines. Please pay at the library desk.</div><?php endif; ?>
+<?php endif; ?>
+
 <?php if (is_staff()): ?>
-  <?php $icons = ['Total book copies' => ['book', 't1'], 'Members' => ['users', 't2'], 'Books on loan' => ['loans', 't3'], 'Overdue' => ['alert', 't4']]; ?>
+  <?php $icons = ['Total book copies' => ['book', 't1'], 'Members' => ['users', 't2'], 'Books on loan' => ['loans', 't3'], 'Overdue' => ['alert', 't4'], 'Unpaid fines' => ['cash', 't2']]; ?>
   <div class="stats">
     <?php foreach ($stats as $label => $value): ?>
       <div class="card stat with-ico">

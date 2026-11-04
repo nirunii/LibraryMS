@@ -13,6 +13,7 @@
     <?= csrf_field() ?>
     <label>Full name <input name="name" value="<?= e($u['name']) ?>" required></label>
     <label>Email <input type="email" name="email" value="<?= e($u['email']) ?>" required></label>
+    <label>Phone (optional) <input name="phone" value="<?= e($u['phone'] ?? '') ?>"></label>
     <label><?= $isNew ? 'Password' : 'New password (leave blank to keep current)' ?>
       <input type="password" name="password" <?= $isNew ? 'required' : '' ?>></label>
     <?php if ($canAssignRole): ?>

@@ -34,20 +34,21 @@ class User extends Model
         $pw = $d['password'] ?? '';
         if (($id === null || $pw !== '') && strlen($pw) < 6) { $err[] = 'Password must be at least 6 characters.'; }
         if (isset($d['role']) && !in_array($d['role'], self::ROLES, true)) { $err[] = 'Invalid role.'; }
+        if (strlen(trim($d['phone'] ?? '')) > 30) { $err[] = 'Phone number is too long.'; }
         return $err;
     }
 
     public function create($d)
     {
-        $st = $this->db->prepare('INSERT INTO users (name, email, password, role) VALUES (?, ?, ?, ?)');
-        $st->execute([trim($d['name']), $d['email'], password_hash($d['password'], PASSWORD_DEFAULT), $d['role'] ?? 'member']);
+        $st = $this->db->prepare('INSERT INTO users (name, email, password, phone, role) VALUES (?, ?, ?, ?, ?)');
+        $st->execute([trim($d['name']), $d['email'], password_hash($d['password'], PASSWORD_DEFAULT), trim($d['phone'] ?? '') ?: null, $d['role'] ?? 'member']);
         return $this->db->lastInsertId();
     }
 
     public function update($id, $d)
     {
-        $sql = 'UPDATE users SET name = ?, email = ?, role = ?';
-        $p = [trim($d['name']), $d['email'], $d['role']];
+        $sql = 'UPDATE users SET name = ?, email = ?, phone = ?, role = ?';
+        $p = [trim($d['name']), $d['email'], trim($d['phone'] ?? '') ?: null, $d['role']];
         if (($d['password'] ?? '') !== '') {
             $sql .= ', password = ?';
             $p[] = password_hash($d['password'], PASSWORD_DEFAULT);
@@ -73,11 +74,35 @@ class User extends Model
 
     public function membersOnly()
     {
-        return $this->many("SELECT id, name, email FROM users WHERE role = 'member' ORDER BY name");
+        return $this->many("SELECT id, name, email FROM users WHERE role = 'member' AND status = 'active' ORDER BY name");
     }
 
     public function countMembers()
     {
         return (int)$this->scalar("SELECT COUNT(*) FROM users WHERE role = 'member'");
+    }
+
+    // Members change their own name, email and phone (not their role).
+    public function updateProfile($id, $d)
+    {
+        $this->db->prepare('UPDATE users SET name = ?, email = ?, phone = ? WHERE id = ?')
+            ->execute([trim($d['name']), $d['email'], trim($d['phone'] ?? '') ?: null, $id]);
+    }
+
+    // Returns [success, message]
+    public function changePassword($id, $current, $new)
+    {
+        $u = $this->find($id);
+        if (!$u || !password_verify($current, $u['password'])) { return [false, 'Your current password is not correct.']; }
+        if (strlen($new) < 6) { return [false, 'The new password must be at least 6 characters.']; }
+        $this->db->prepare('UPDATE users SET password = ? WHERE id = ?')->execute([password_hash($new, PASSWORD_DEFAULT), $id]);
+        return [true, 'Password changed.'];
+    }
+
+    // Suspended members can log in but cannot borrow.
+    public function setStatus($id, $status)
+    {
+        if (!in_array($status, ['active', 'suspended'], true)) { return; }
+        $this->db->prepare('UPDATE users SET status = ? WHERE id = ?')->execute([$status, $id]);
     }
 }
