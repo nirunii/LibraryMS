@@ -1,7 +1,8 @@
-# LibraryMS v2 - Library Management System (PHP MVC)
+# LibraryMS - Library Management System (PHP MVC)
 
-Version 2 adds real-world library features on top of the assignment version:
-renewals, a holds queue, fine payments with receipts, member profiles, a settings page and an audit log.
+A web-based library management system built with PHP, MySQL and the MVC pattern.
+It supports a public catalogue, loans and renewals, a holds queue, fine payments
+with printable receipts, member profiles, admin settings and an audit log.
 
 ## Requirements
 - XAMPP (Apache + MySQL + PHP 8.0 or newer)
