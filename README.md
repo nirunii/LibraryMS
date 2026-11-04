@@ -58,3 +58,37 @@ app/views/       HTML templates (no SQL, no business rules)
 public/css/      stylesheet
 database/        library.sql (schema + sample data)
 ```
+
+## Screenshots
+
+### Public catalogue
+Anyone can browse and search the books without an account.
+![Public catalogue](screenshots/01-catalogue.png)
+
+### Book details
+Shows availability and the holds queue. Borrowing asks the visitor to log in.
+![Book details](screenshots/02-book-details.png)
+
+### Admin dashboard
+Live library stats and a chart of books borrowed per month.
+![Admin dashboard](screenshots/03-dashboard.png)
+
+### Loans
+Librarians issue, renew and return books, and see overdue loans and fines.
+![Loans](screenshots/04-loans.png)
+
+### Holds queue
+When a copy is returned, it is held for the next member in line.
+![Holds queue](screenshots/05-holds-queue.png)
+
+### Payment receipt
+Fines can be paid in full or in part, with a printable receipt.
+![Payment receipt](screenshots/06-receipt.png)
+
+### Audit log
+Every important action is recorded: who did what, and when.
+![Audit log](screenshots/07-audit-log.png)
+
+### Member profile
+Contact details, borrowing history, reservations and fine payments.
+![Member profile](screenshots/08-profile.png)
